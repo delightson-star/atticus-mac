@@ -34,10 +34,10 @@ cat > "$APP/Contents/Info.plist" <<P
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>AtticusSource</key><string>$(pwd)</string>
 <key>LSUIElement</key><true/>
-<key>NSMicrophoneUsageDescription</key><string>Atticus listens when you use its shortcut or microphone button.</string>
-<key>NSAppleEventsUsageDescription</key><string>Atticus controls apps like Finder, Chrome and Music when you ask it to.</string>
-<key>NSCalendarsFullAccessUsageDescription</key><string>Atticus reads your calendar, adds events you request, and asks before moving or deleting existing events. Calendar details are sent to your chosen AI model.</string>
-<key>NSSpeechRecognitionUsageDescription</key><string>Atticus turns your words into text on this Mac.</string>
+<key>NSMicrophoneUsageDescription</key><string>단축키나 마이크 버튼을 쓸 때 Atticus가 말씀을 듣습니다.</string>
+<key>NSAppleEventsUsageDescription</key><string>요청하시면 Atticus가 Finder, Chrome, 음악 같은 앱을 다룹니다.</string>
+<key>NSCalendarsFullAccessUsageDescription</key><string>Atticus가 캘린더를 읽고 요청한 일정을 추가하며, 기존 일정을 옮기거나 지우기 전에는 먼저 묻습니다. 일정 내용은 선택한 AI 모델로 전송됩니다.</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>Atticus가 이 맥에서 말씀을 글자로 바꿉니다.</string>
 </dict></plist>
 P
 mv "$STAGE/Atticus" "$APP/Contents/MacOS/Atticus"

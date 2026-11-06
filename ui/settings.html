@@ -652,7 +652,8 @@
   function paintWhisper() {
     const m = W?.models?.find(m => m.id === wid()), dl = m?.progress != null, btn = !W || W.installing ? '' : dl ? 'wcancel' : !W.server ? 'winstall' : !m?.have ? 'wdownload' : '';
     const text = !W ? 'Checking…' : W.installing ? 'Installing whisper.cpp… You can keep using your Mac.' : dl ? `Downloading ${Math.round(m.progress * 100)}%…` : W.error || (!W.server ? 'Needs whisper.cpp.' : !m?.have ? 'Model not downloaded.' : 'Ready. Runs on this Mac.');
-    if ($('wtext').textContent !== text) $('wtext').textContent = text;   // same text: no repeat announcement
+    const shown = window.__ko ? __ko(text) : text;   // 한국어 화면: compare in the shown language
+    if ($('wtext').textContent !== shown) $('wtext').textContent = shown;   // same text: no repeat announcement
     $('wtext').classList.toggle('wait', dl || !!W?.installing); $('wdot').classList.toggle('bad', !W || dl || !!W.error || !W.server || !m?.have);
     ['winstall', 'wdownload', 'wcancel'].forEach(b => $(b).hidden = b !== btn);
     const stored = W?.models?.filter(m => m.have) || [], key = stored.map(m => m.id).join();   // shown under any speech model, so space is always freeable

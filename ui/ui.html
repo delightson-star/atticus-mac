@@ -1237,7 +1237,7 @@
       if (text !== overText) post({ overText: overText = text });
       return !!x || !!m && getComputedStyle(m).cursor === 'pointer';
     },
-    copied() { status('Copied to clipboard'); setTimeout(() => $('status').textContent === 'Copied to clipboard' && status(''), 1400); },
+    copied() { status('Copied to clipboard'); setTimeout(() => $('status').textContent === (window.__ko ? __ko('Copied to clipboard') : 'Copied to clipboard') && status(''), 1400); },
   };
   fit(); post({ ready: 1 });
 </script>

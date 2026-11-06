@@ -872,10 +872,38 @@ func callJS(_ web: WKWebView?, _ fn: String, _ args: [Any]) {
 }
 
 // Load ui/<name> with orbs.js inlined at its /*ORBS*/ marker.
+// 한국어 화면: native menu, alert and window text. Pages use ui/i18n-ko.js.
+let koText: [String: String] = [
+    "Atticus is paused": "Atticus 일시정지됨", "Ask Atticus": "Atticus에게 묻기", "Agents…": "에이전트…",
+    "Show Agent Shelf": "에이전트 선반 보이기", "Hide Agent Shelf": "에이전트 선반 숨기기", "Dictation History…": "받아쓰기 기록…",
+    "Paste Last Dictation": "마지막 받아쓰기 붙여넣기", "Stop Meeting Copilot": "회의 코파일럿 멈추기", "Meeting Copilot…": "회의 코파일럿…",
+    "Resume Atticus": "Atticus 다시 시작", "Pause Atticus": "Atticus 일시정지", "Settings…": "설정…", "Help & Feedback": "도움말 및 의견",
+    "Setup & Permissions…": "설정 및 권한…", "Report Feedback…": "의견 보내기…", "Leave a Tip…": "후원하기…", "Show Tips Again": "팁 다시 보기",
+    "Quit Atticus": "Atticus 종료", "Cancel": "취소", "Delete": "지우기", "Forget": "지우기",
+    "Delete this meeting?": "이 회의를 지울까요?", "Its transcript, notes and recap will be removed from this Mac.": "기록, 메모, 요약이 이 맥에서 지워집니다.",
+    "Keep your saved meetings?": "저장된 회의를 남길까요?",
+    "New transcripts will no longer be saved. You can keep or delete the meetings already on this Mac.": "새 기록은 더 이상 저장되지 않습니다. 이 맥에 이미 있는 회의는 남기거나 지울 수 있습니다.",
+    "Keep Meetings": "회의 남기기", "Delete All Meetings": "회의 모두 지우기",
+    "Forget this conversation?": "이 대화를 지울까요?", "Follow-ups like “open the second one” will start fresh.": "“두 번째 거 열어” 같은 이어지는 요청이 새로 시작됩니다.",
+    "These details are removed from About you. This can’t be undone.": "‘목사님에 대해’에서 이 정보가 지워집니다. 되돌릴 수 없습니다.",
+    "Agents": "에이전트", "Allow Atticus": "Atticus 허용", "Atticus Settings": "Atticus 설정",
+]
+func ko(_ s: String) -> String {
+    if let t = koText[s] { return t }
+    func mid(_ head: String, _ tail: String) -> String? { s.hasPrefix(head) && s.hasSuffix(tail) && s.count > head.count + tail.count ? String(s.dropFirst(head.count).dropLast(tail.count)) : nil }
+    if let k = mid("Hold ", " and talk") { return k + " 누른 채 말하기" }
+    if let k = mid("Press ", " to talk · again to send") { return k + " 눌러 말하기 · 다시 누르면 보내기" }
+    if let k = mid("Press ", " to type") { return k + " 눌러 입력" }
+    if let n = mid("Agents · ", " running…") { return "에이전트 · " + n + "개 실행 중…" }
+    if let src = mid("Forget everything from ", "?") { return src + "의 모든 정보를 지울까요?" }
+    return s
+}
+
 func loadPage(_ web: WKWebView, _ name: String) {
     let html = (try? String(contentsOfFile: dir + "/ui/" + name, encoding: .utf8)) ?? "missing " + name
     let orbs = (try? String(contentsOfFile: dir + "/ui/orbs.js", encoding: .utf8)) ?? ""
-    web.loadHTMLString(html.replacingOccurrences(of: "/*ORBS*/", with: orbs), baseURL: nil)
+    let ko = (try? String(contentsOfFile: dir + "/ui/i18n-ko.js", encoding: .utf8)).map { "<script>" + $0 + "</script>" } ?? ""   // 한국어 화면
+    web.loadHTMLString(html.replacingOccurrences(of: "/*ORBS*/", with: orbs) + ko, baseURL: nil)
 }
 
 // The screen under the mouse, else the main one.
@@ -4470,7 +4498,7 @@ final class AgentPanels: NSObject, WKScriptMessageHandler {
             let screen = mouseScreen
             let f = MeetingFrame.clamp(NSRect(x:screen.visibleFrame.midX-380,y:screen.visibleFrame.midY-290,width:760,height:580),screen.visibleFrame)
             let panel = KeyPanel(contentRect:f,styleMask:[.titled,.closable,.resizable,.nonactivatingPanel,.fullSizeContentView],backing:.buffered,defer:false)
-            panel.title = "Agents"; panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true
+            panel.title = ko("Agents"); panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true
             panel.minSize = NSSize(width:520,height:340); panel.isReleasedWhenClosed = false
             view = panel; viewWeb = makeWeb(panel,surface:"view")
             if let bg = panel.contentView { viewWeb?.frame = NSRect(x:0,y:0,width:bg.bounds.width,height:bg.bounds.height-28) }   // the glass strip above keeps the traffic lights and window drag native
@@ -5001,7 +5029,7 @@ final class PermissionHelp: NSObject, NSWindowDelegate {
         let w = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: 110),
                         styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         applySharing(w)
-        w.title = "Allow Atticus"; w.level = .floating; w.hidesOnDeactivate = false
+        w.title = ko("Allow Atticus"); w.level = .floating; w.hidesOnDeactivate = false
         w.isReleasedWhenClosed = false; w.delegate = self
         let bg = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 360, height: 110))
         bg.material = .popover; bg.state = .active
@@ -5278,7 +5306,7 @@ final class MenuBar: NSObject, NSMenuDelegate {
         m.removeAllItems()
         let keys = Prefs.str("hotkeyLabel")
         let hint = Prefs.str("input") == "type" ? "Press \(keys) to type" : Prefs.str("talkMode") == "toggle" ? "Press \(keys) to talk · again to send" : "Hold \(keys) and talk"
-        let head = NSMenuItem(title: Prefs.bool("paused") ? "Atticus is paused" : hint, action: nil, keyEquivalent: "")
+        let head = NSMenuItem(title: ko(Prefs.bool("paused") ? "Atticus is paused" : hint), action: nil, keyEquivalent: "")
         head.attributedTitle = NSAttributedString(string: head.title, attributes: [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold), .foregroundColor: NSColor.secondaryLabelColor])
         head.isEnabled = false; m.addItem(head)
         let u = NSMenuItem(title: today(), action: nil, keyEquivalent: "")
@@ -5296,7 +5324,7 @@ final class MenuBar: NSObject, NSMenuDelegate {
         add(m, Prefs.bool("paused") ? "Resume Atticus" : "Pause Atticus", #selector(pause), "", Prefs.bool("paused") ? "play.fill" : "pause.fill")
         m.addItem(.separator())
         add(m, "Settings…", #selector(openSettings), ",", "gearshape")
-        let help = NSMenu(title: "Help & Feedback")
+        let help = NSMenu(title: ko("Help & Feedback"))
         add(help, "Setup & Permissions…", #selector(openSetup), "", "checkmark.shield")
         add(help, "Report Feedback…", #selector(reportFeedback), "", "bubble.left")
         add(help, "Leave a Tip…", #selector(tipJar), "", "heart")
@@ -5306,7 +5334,7 @@ final class MenuBar: NSObject, NSMenuDelegate {
         add(m, "Quit Atticus", #selector(quit), "q", "power")
     }
     @discardableResult func add(_ m: NSMenu, _ t: String, _ a: Selector?, _ k: String, _ symbol: String) -> NSMenuItem {
-        let i = NSMenuItem(title: t, action: a, keyEquivalent: k); i.target = self
+        let i = NSMenuItem(title: ko(t), action: a, keyEquivalent: k); i.target = self
         i.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?.withSymbolConfiguration(.init(pointSize: 13, weight: .regular))   // a point size keeps wide symbols' shape
         #if compiler(>=6.4)   // Swift 6.4 ships with the macOS 27 SDK; older SDKs lack preferredImageVisibility
         if #available(macOS 27.0, *) { i.preferredImageVisibility = .visible }   // macOS 27 hides menu symbols by default
@@ -5472,7 +5500,7 @@ final class SettingsWindow: NSObject, WKScriptMessageHandler, WKNavigationDelega
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 780, height: 560),
                          styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         applySharing(w)
-        w.titlebarAppearsTransparent = true; w.titleVisibility = .hidden; w.title = "Atticus Settings"
+        w.titlebarAppearsTransparent = true; w.titleVisibility = .hidden; w.title = ko("Atticus Settings")
         w.isReleasedWhenClosed = false; w.delegate = self
         w.contentMinSize = NSSize(width: 700, height: 460); w.contentMaxSize = NSSize(width: 1000, height: 820)   // wider only spreads the page into empty space
         w.collectionBehavior.insert(.fullScreenNone)   // the green button zooms up to the max size
@@ -5613,7 +5641,7 @@ final class SettingsWindow: NSObject, WKScriptMessageHandler, WKNavigationDelega
 
     func meetings(_ data: [String: Any], _ done: (([String: Any]) -> Void)? = nil) {
         if data["action"] as? String == "delete" {
-            let alert = NSAlert(); alert.messageText = "Delete this meeting?"; alert.informativeText = "Its transcript, notes and recap will be removed from this Mac."; alert.addButton(withTitle: "Delete"); alert.addButton(withTitle: "Cancel")
+            let alert = NSAlert(); alert.messageText = ko("Delete this meeting?"); alert.informativeText = ko("Its transcript, notes and recap will be removed from this Mac."); alert.addButton(withTitle: ko("Delete")); alert.addButton(withTitle: ko("Cancel"))
             guard alert.runModal() == .alertFirstButtonReturn else { done?([:]); return }
         }
         DispatchQueue.global().async { [weak self] in
@@ -5669,7 +5697,7 @@ final class SettingsWindow: NSObject, WKScriptMessageHandler, WKNavigationDelega
         if k == "meetingSave", v as? Bool == false, Prefs.bool("meetingSave") {
             guard Prefs.set(k, false) else { push(); send("notice", ["text": "Couldn’t save that change, so the old setting is back."]); return }
             meeting.savingChanged(false); push()
-            let alert = NSAlert(); alert.messageText = "Keep your saved meetings?"; alert.informativeText = "New transcripts will no longer be saved. You can keep or delete the meetings already on this Mac."; alert.addButton(withTitle: "Keep Meetings"); alert.addButton(withTitle: "Delete All Meetings")
+            let alert = NSAlert(); alert.messageText = ko("Keep your saved meetings?"); alert.informativeText = ko("New transcripts will no longer be saved. You can keep or delete the meetings already on this Mac."); alert.addButton(withTitle: ko("Keep Meetings")); alert.addButton(withTitle: ko("Delete All Meetings"))
             if alert.runModal() == .alertSecondButtonReturn { meetings(["action": "clear"]) }
             return
         }
@@ -5715,7 +5743,7 @@ final class SettingsWindow: NSObject, WKScriptMessageHandler, WKNavigationDelega
     func userContentController(_ c: WKUserContentController, didReceive m: WKScriptMessage) { if let b = m.body as? [String: Any] { handle(b) } }
 
     func confirm(_ title: String, _ detail: String, _ button: String) -> Bool {
-        let alert = NSAlert(); alert.messageText = title; alert.informativeText = detail; alert.addButton(withTitle: button); alert.addButton(withTitle: "Cancel")
+        let alert = NSAlert(); alert.messageText = ko(title); alert.informativeText = ko(detail); alert.addButton(withTitle: ko(button)); alert.addButton(withTitle: ko("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 

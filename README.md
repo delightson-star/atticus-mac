@@ -1,3 +1,6 @@
+> **한국어판 (성은교회 포크)** — 화면·메뉴·알림을 한국어로 보여 줍니다. 번역은 `ui/i18n-ko.js`(화면)와 `Atticus.swift`의 `koText`(메뉴·알림)에 있습니다.
+> 맥에서 이 포크로 업데이트받기: `cd ~/.atticus && git remote set-url origin https://github.com/delightson-star/atticus-mac.git && git fetch origin && git reset --hard origin/main && ./build.sh`
+
 <p align="center"><img src="docs/banner.png" alt="Atticus. Your whole Mac, one sentence away." width="100%"></p>
 
 <p align="center">
