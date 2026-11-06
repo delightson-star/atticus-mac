@@ -902,8 +902,8 @@ func ko(_ s: String) -> String {
 func loadPage(_ web: WKWebView, _ name: String) {
     let html = (try? String(contentsOfFile: dir + "/ui/" + name, encoding: .utf8)) ?? "missing " + name
     let orbs = (try? String(contentsOfFile: dir + "/ui/orbs.js", encoding: .utf8)) ?? ""
-    let ko = (try? String(contentsOfFile: dir + "/ui/i18n-ko.js", encoding: .utf8)).map { "<script>" + $0 + "</script>" } ?? ""   // 한국어 화면
-    web.loadHTMLString(html.replacingOccurrences(of: "/*ORBS*/", with: orbs) + ko, baseURL: nil)
+    let koScript = (try? String(contentsOfFile: dir + "/ui/i18n-ko.js", encoding: .utf8)).map { "<script>" + $0 + "</script>" } ?? ""   // 한국어 화면
+    web.loadHTMLString(html.replacingOccurrences(of: "/*ORBS*/", with: orbs) + koScript, baseURL: nil)
 }
 
 // The screen under the mouse, else the main one.
